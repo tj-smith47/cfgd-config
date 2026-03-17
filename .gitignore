@@ -1,0 +1,17 @@
+# Ignore everything by default
+**
+
+# cfgd config
+!cfgd.yaml
+!.gitignore
+!README.md
+
+# Profiles and modules
+!profiles/
+!profiles/**
+!modules/
+!modules/**
+
+# CI
+!.github/
+!.github/**

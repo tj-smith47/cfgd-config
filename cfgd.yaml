@@ -1,0 +1,9 @@
+apiVersion: cfgd.io/v1alpha1
+kind: Config
+metadata:
+  name: cfgd-config
+spec:
+  aliases:
+    add: profile update --active --add-file
+    remove: profile update --active --remove-file
+  theme: dracula
