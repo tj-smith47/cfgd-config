@@ -41,15 +41,15 @@ spec:
     - linux
   files:
   - source: files/init.lua
-    target: /root/.config/nvim/init.lua
+    target: ~/.config/nvim/init.lua
   - source: files/lazy-lock.json
-    target: /root/.config/nvim/lazy-lock.json
+    target: ~/.config/nvim/lazy-lock.json
   - source: files/stylua.toml
-    target: /root/.config/nvim/stylua.toml
+    target: ~/.config/nvim/stylua.toml
   - source: files/lua
-    target: /root/.config/nvim/lua
+    target: ~/.config/nvim/lua
   - source: files/after
-    target: /root/.config/nvim/after
+    target: ~/.config/nvim/after
   env:
   - name: EDITOR
     value: nvim
