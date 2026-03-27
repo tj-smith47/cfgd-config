@@ -57,5 +57,5 @@ spec:
   - name: v
     command: nvim
   scripts:
-    post-apply:
+    postApply:
     - nvim --headless '+Lazy! sync' '+MasonToolsInstallSync' +qa
