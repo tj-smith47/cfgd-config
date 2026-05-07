@@ -1,0 +1,8 @@
+apiVersion: cfgd.io/v1alpha1
+kind: Profile
+metadata:
+  name: base
+spec:
+  modules:
+    - clift
+    - jarvis
