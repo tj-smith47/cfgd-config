@@ -3,6 +3,7 @@ kind: Config
 metadata:
   name: cfgd-config
 spec:
+  profile: base
   aliases:
     add: profile update --active --add-file
     remove: profile update --active --remove-file
