@@ -8,7 +8,7 @@ spec:
   packages:
   # --- Editor ---------------------------------------------------------------
   - name: neovim
-    minVersion: '0.10'
+    minVersion: '0.11'
     prefer:
     - brew
     - snap
@@ -100,7 +100,7 @@ spec:
   # go.nvim's :GoInstallBinaries calls `go install` for dlv, gotests, iferr,
   # fillstruct, gomodifytags. Mason also installs gopls/gofumpt/golines via go.
   - name: go
-    minVersion: '1.22'
+    minVersion: '1.25'
     prefer:
     - brew
     - apt
