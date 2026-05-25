@@ -261,7 +261,7 @@ return {
       mason.setup({
         ensure_installed = {
           -- Golang
-          "goimmports",
+          "goimports",
           "gofumpt",
           -- Python
           "black",
@@ -406,7 +406,6 @@ return {
         { "mypy", auto_update = true },
         { "prettier", auto_update = true },
         { "pylint", auto_update = true },
-        { "python-lsp-server", auto_update = true },
         { "revive", auto_update = true },
         { "ruff", auto_update = true },
         { "shellcheck", auto_update = true },

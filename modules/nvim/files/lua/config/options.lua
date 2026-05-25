@@ -84,6 +84,18 @@ opt.pumheight = 10 -- pop-up menu height
 opt.signcolumn = "yes" -- show sign column so that text doesn't shift
 opt.termguicolors = true
 
+-- Route the system clipboard through OSC52 when we're inside an SSH session.
+-- Lets `"+y` / `"+p` work over Termius (and any other OSC52-capable terminal)
+-- without needing xclip/wl-clipboard on the host.
+if vim.env.SSH_TTY ~= nil then
+  local osc52 = require("vim.ui.clipboard.osc52")
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+    paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+  }
+end
+
 local ok, nvim_notify = pcall(require, "notify")
 if not ok then
   return
