@@ -9,7 +9,28 @@ global.maplocalleader = ","
 -- Language Server Settings
 global.loaded_perl_provider = 0 -- don't load perl LSP Provider
 -- global.loaded_ruby_provider = 0 -- don't load ruby LSP Provider
--- global.python3_host_prog = vim.fn.exepath("python3")
+
+-- Pin the Python provider to a deterministic interpreter so :checkhealth
+-- stops chasing pyenv shims (and the "pynvim NOT installed" warning stays
+-- gone after the next interpreter swap). Order:
+--   1. The pipx-managed pynvim venv that cfgd's nvim module installs.
+--   2. OS-specific common locations.
+--   3. Whatever `python3` is on PATH (last resort — may be a pyenv shim).
+local function resolve_python_host()
+  local pipx_venv = vim.fn.expand("~/.local/share/pipx/venvs/pynvim/bin/python")
+  if vim.fn.executable(pipx_venv) == 1 then
+    return pipx_venv
+  end
+  if vim.fn.has("mac") == 1 then
+    for _, p in ipairs({ "/opt/homebrew/bin/python3", "/usr/local/bin/python3" }) do
+      if vim.fn.executable(p) == 1 then
+        return p
+      end
+    end
+  end
+  return vim.fn.exepath("python3")
+end
+global.python3_host_prog = resolve_python_host()
 
 -- Disable default gx mapping
 global.netrw_nogx = 1 -- disable netrw 'gx' mapping

@@ -34,8 +34,16 @@ spec:
   # --- CLI helpers used directly by plugins -------------------------------
   - name: ripgrep                 # telescope live_grep, todo-comments
   - name: fd                      # telescope find_files
+    # apt ships fd as `fdfind` (no symlink); brew + cargo install the binary
+    # as `fd` directly. Prefer those so telescope can find it without a manual
+    # alias on the user's PATH.
+    prefer:
+    - brew
+    - cargo
+    - apt
     aliases:
       apt: fd-find
+      cargo: fd-find
   - name: zoxide                  # telescope-zoxide
     prefer:
     - brew
@@ -73,6 +81,13 @@ spec:
     prefer:
     - npm
     - brew
+  # Node provider for nvim — needed by remote/JS plugins. Without it,
+  # :checkhealth reports "Missing 'neovim' npm package". Same canonical
+  # `neovim` name as the editor entry above; cfgd's resolver treats per-manager
+  # entries independently.
+  - name: neovim
+    prefer:
+    - npm
 
   # --- Python toolchain ---------------------------------------------------
   # Mason installs many python-based linters/formatters via pip. dap-python

@@ -66,13 +66,17 @@ return {
           keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts) -- smart rename
 
           opts.desc = "Show documentation for what is under cursor"
-          keymap.set("n", "K", vim.lsp.buf.hover, opts) -- show documentation for what is under cursor
+          keymap.set("n", "K", function()
+            vim.lsp.buf.hover({ border = "rounded" })
+          end, opts) -- show documentation for what is under cursor
 
           opts.desc = "Restart LSP"
           keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts) -- mapping to restart lsp if necessary
 
           opts.desc = "Show signature help"
-          keymap.set({ "n", "i" }, "<C-k>", vim.lsp.buf.signature_help, opts) -- show signature help
+          keymap.set({ "n", "i" }, "<C-k>", function()
+            vim.lsp.buf.signature_help({ border = "rounded" })
+          end, opts) -- show signature help
 
           opts.desc = "Show document symbols"
           keymap.set("n", "<leader>ds", "<cmd>Telescope lsp_document_symbols<CR>", opts) -- show document symbols
@@ -93,16 +97,9 @@ return {
         end,
       })
 
-      -- Setup Handlers
-      vim.lsp.handlers["textDocument/hover"] =
-        vim.lsp.with(vim.lsp.handlers.hover, { float = { border = "rounded" }, virtual_text = false })
-      vim.lsp.handlers["textDocument/diagnostic"] =
-        vim.lsp.with(vim.lsp.diagnostic.on_diagnostic, { float = { border = "rounded" }, virtual_text = false })
-      vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(
-        vim.lsp.handlers.signature_help,
-        { float = { border = "rounded" }, source = true, virtual_text = false }
-      )
       -- LSP integration
+      -- Border styling for hover / signature_help moved to the keymap call sites
+      -- above. Diagnostic float borders are set via vim.diagnostic.config() below.
       -- Make sure to also have the snippet with the common helper functions in your config!
 
       -- local client_notifs = {}
@@ -193,13 +190,9 @@ return {
       --   end
       -- end
       --
-      -- Setup Diagnostics
-      vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
-        float = { border = "rounded", source = true },
-        source = true,
-        underline = false,
-        virtual_text = false,
-      })
+      -- Setup Diagnostics: publishDiagnostics styling is now done via
+      -- vim.diagnostic.config() at the bottom of this function. The handler
+      -- override below remains for the explicit refresh hook.
       vim.lsp.handlers["workspace/diagnostic/refresh"] = function(_, _, ctx)
         local ns = vim.lsp.diagnostic.get_namespace(ctx.client_id)
         local bufnr = vim.api.nvim_get_current_buf()
@@ -314,7 +307,6 @@ return {
         -- },
         elixirls = {},
         -- emmet_ls = {},
-        erlangls = {},
         -- eslint = {},
         gh_actions_ls = {
           init_options = {},
