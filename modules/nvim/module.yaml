@@ -197,10 +197,21 @@ spec:
         export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH"
         nvim --headless "+MasonToolsInstallSync" +qa
       timeout: 900s
+    # go.nvim's :GoInstallBinaries is async and lazy-loaded (event=CmdlineEnter,
+    # ft=go) — neither fires in headless mode, and the install fire-and-forgets
+    # before nvim exits. Install the binaries directly with `go install`; Mason
+    # already covers gopls/gofumpt/golines/gomodifytags/gotests/impl.
     - run: |
         export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH"
-        nvim --headless "+GoInstallBinaries" +qa
-      timeout: 300s
+        for pkg in \
+          github.com/go-delve/delve/cmd/dlv@latest \
+          github.com/koron/iferr@latest \
+          github.com/davidrjenni/reftools/cmd/fillstruct@latest \
+          github.com/davidrjenni/reftools/cmd/fillswitch@latest \
+          golang.org/x/tools/cmd/gonew@latest; do
+          go install "$pkg" || echo "WARN: failed: $pkg"
+        done
+      timeout: 600s
       continueOnError: true
     # markdown-preview.nvim's `build` function is gated on `#ui > 0`, so headless
     # installs skip the node-app install. Do it directly from the lazy plugin dir.
