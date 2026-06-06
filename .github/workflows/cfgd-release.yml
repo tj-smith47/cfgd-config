@@ -6,7 +6,11 @@ on:
   push:
     branches: [master]
     paths:
+      - 'modules/clift/**'
+      - 'modules/jarvis/**'
       - 'modules/nvim/**'
+      - 'profiles/base.yaml'
+      - 'profiles/base.yml'
 
 permissions:
   contents: write
@@ -15,7 +19,10 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
+      module_clift: ${{ steps.changes.outputs.module_clift }}
+      module_jarvis: ${{ steps.changes.outputs.module_jarvis }}
       module_nvim: ${{ steps.changes.outputs.module_nvim }}
+      profile_base: ${{ steps.changes.outputs.profile_base }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,10 +34,25 @@ jobs:
           else
             CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD)
           fi
+          if echo "$CHANGED" | grep -q '^modules/clift/'; then
+            echo "module_clift=true" >> $GITHUB_OUTPUT
+          else
+            echo "module_clift=false" >> $GITHUB_OUTPUT
+          fi
+          if echo "$CHANGED" | grep -q '^modules/jarvis/'; then
+            echo "module_jarvis=true" >> $GITHUB_OUTPUT
+          else
+            echo "module_jarvis=false" >> $GITHUB_OUTPUT
+          fi
           if echo "$CHANGED" | grep -q '^modules/nvim/'; then
             echo "module_nvim=true" >> $GITHUB_OUTPUT
           else
             echo "module_nvim=false" >> $GITHUB_OUTPUT
+          fi
+          if echo "$CHANGED" | grep -q '^profiles/base\.'; then
+            echo "profile_base=true" >> $GITHUB_OUTPUT
+          else
+            echo "profile_base=false" >> $GITHUB_OUTPUT
           fi
 
   tag-modules:
@@ -39,6 +61,10 @@ jobs:
     strategy:
       matrix:
         include:
+          - name: clift
+            changed: ${{ needs.detect-changes.outputs.module_clift }}
+          - name: jarvis
+            changed: ${{ needs.detect-changes.outputs.module_jarvis }}
           - name: nvim
             changed: ${{ needs.detect-changes.outputs.module_nvim }}
     steps:
@@ -56,5 +82,26 @@ jobs:
         if: matrix.changed == 'true'
         run: |
           TAG="${{ matrix.name }}/v${{ steps.version.outputs.version }}"
+          git tag -f "$TAG"
+          git push origin "$TAG" --force
+
+  tag-profiles:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    strategy:
+      matrix:
+        include:
+          - name: base
+            changed: ${{ needs.detect-changes.outputs.profile_base }}
+    steps:
+      - uses: actions/checkout@v4
+        if: matrix.changed == 'true'
+        with:
+          fetch-depth: 0
+      - name: Tag profile release
+        if: matrix.changed == 'true'
+        run: |
+          DATE=$(date +%Y%m%d)
+          TAG="profile/${{ matrix.name }}/${DATE}"
           git tag -f "$TAG"
           git push origin "$TAG" --force
