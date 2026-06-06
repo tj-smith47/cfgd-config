@@ -173,11 +173,9 @@ spec:
   scripts:
     # First-run bootstrap. Each step is idempotent; cfgd will skip on second apply
     # only via timestamp tracking, but the underlying commands handle re-runs.
-    #
-    # PATH is exported inline in every step because cfgd's script runner does not
-    # currently merge spec.env into the postApply process environment — tracked
-    # in /opt/repos/cfgd/.claude/known-bugs.md. When that lands, the inline
-    # exports become redundant and can be dropped.
+    # spec.env above (PATH, EDITOR, VISUAL) is injected into each step's process
+    # environment, so the nvim binary and ~/.local/bin, go/bin, cargo/bin
+    # toolchains are already on PATH — no per-step export needed.
     postApply:
     - run: |
         if command -v pipx >/dev/null 2>&1; then
@@ -186,19 +184,15 @@ spec:
       timeout: 120s
       continueOnError: true
     - run: |
-        export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH"
         nvim --headless "+Lazy! restore" +qa
       timeout: 900s
     - run: |
-        export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH"
         nvim --headless "+TSUpdateSync" +qa
       timeout: 600s
     - run: |
-        export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH"
         nvim --headless "+MasonToolsInstallSync" +qa
       timeout: 900s
     - run: |
-        export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH"
         nvim --headless "+GoInstallBinaries" +qa
       timeout: 300s
       continueOnError: true
