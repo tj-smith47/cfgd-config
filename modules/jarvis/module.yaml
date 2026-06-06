@@ -73,6 +73,8 @@ spec:
     - name: jira
       prefer:
         - brew
+      aliases:
+        brew: jira-cli
 
   # Shipped to the box as a directory tree under ~/.local/share/jarvis.
   files:
