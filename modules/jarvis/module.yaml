@@ -76,7 +76,7 @@ spec:
 
   # Shipped to the box as a directory tree under ~/.local/share/jarvis.
   files:
-    - source: git@github.com:tj-smith47/jarvis.git@main
+    - source: git@github.com:tj-smith47/jarvis.git
       target: ~/.local/share/jarvis
 
   # Wire JARVIS_DIR so cmds/lib/* can resolve relative paths even when the
