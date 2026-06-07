@@ -24,7 +24,7 @@ jobs:
       module_nvim: ${{ steps.changes.outputs.module_nvim }}
       profile_base: ${{ steps.changes.outputs.profile_base }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - id: changes
@@ -68,7 +68,7 @@ jobs:
           - name: nvim
             changed: ${{ needs.detect-changes.outputs.module_nvim }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: matrix.changed == 'true'
         with:
           fetch-depth: 0
@@ -94,7 +94,7 @@ jobs:
           - name: base
             changed: ${{ needs.detect-changes.outputs.profile_base }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: matrix.changed == 'true'
         with:
           fetch-depth: 0
