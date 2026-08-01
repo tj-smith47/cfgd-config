@@ -397,9 +397,17 @@ return {
 
           dashboard.section.footer.val = { row1, row2Padded }
 
-          require("nvim-tree.api").tree.open()
-          pcall(vim.cmd.AlphaRedraw)
-          vim.cmd([[wincmd p]])
+          -- Deferred out of the UIEnter path: nvim-tree's git runner blocks on
+          -- vim.wait(), which pumps the event loop and re-enters the async
+          -- treesitter parse still running for the file being opened. That
+          -- re-entry throws inside languagetree and aborts the rest of this
+          -- callback, so the dashboard and the buffer's highlighting never
+          -- finish loading.
+          vim.schedule(function()
+            require("nvim-tree.api").tree.open()
+            pcall(vim.cmd.AlphaRedraw)
+            vim.cmd([[wincmd p]])
+          end)
         end,
       })
     end

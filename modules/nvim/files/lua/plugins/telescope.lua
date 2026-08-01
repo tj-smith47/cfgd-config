@@ -13,7 +13,12 @@ return {
       "ahmedkhalf/project.nvim",
       event = "VeryLazy",
       main = "project_nvim",
-      opts = {},
+      -- The "lsp" detection method calls vim.lsp.buf_get_clients(), removed
+      -- from the supported API. The deprecation notice it raises is rendered
+      -- by nvim-notify in a treesitter-highlighted float, and that render
+      -- throws during startup — taking the rest of the UIEnter chain with it.
+      -- Pattern detection covers every repo here, all of which are git.
+      opts = { detection_methods = { "pattern" } },
     },
     {
       "isak102/telescope-git-file-history.nvim",

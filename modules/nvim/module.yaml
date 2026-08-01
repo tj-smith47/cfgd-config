@@ -153,6 +153,11 @@ spec:
     target: ~/.config/nvim/lua
   - source: files/after
     target: ~/.config/nvim/after
+  # Earlier on the runtimepath than any plugin, which is what it takes to
+  # replace a query: Neovim keeps the first non-`;; extends` file it finds and
+  # discards the rest.
+  - source: files/queries
+    target: ~/.config/nvim/queries
 
   env:
   - name: EDITOR

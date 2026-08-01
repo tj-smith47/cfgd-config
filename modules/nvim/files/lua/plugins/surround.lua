@@ -14,10 +14,13 @@ return {
     { "<C-g>", mode = "i" },
   },
   config = function()
+    -- v4 stopped accepting `keymaps` in setup(); mappings are set against the
+    -- <Plug> targets instead. `gs` replaces the default `S` for visual mode.
+    vim.keymap.set("x", "gs", "<Plug>(nvim-surround-visual)", {
+      desc = "Add a surrounding pair around a visual selection",
+    })
+
     require("nvim-surround").setup({
-      keymaps = {
-        visual = "gs",
-      },
       -- add new object "y" for operating on Types. For example: `Vector<String>`
       surrounds = {
         ["y"] = {

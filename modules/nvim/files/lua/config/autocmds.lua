@@ -35,16 +35,25 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   pattern = "*",
 })
 
--- [[ Open nvim-tree when opening a directory ]]
-vim.api.nvim_create_autocmd({ "VimEnter" }, {
+-- [[ Open nvim-tree when launched on a directory ]]
+-- The tree window opens before nvim-tree's initial scan has rendered, so it
+-- comes up empty; reloading once startup settles forces it to populate
+-- (the programmatic equivalent of a manual :NvimTreeRefresh).
+vim.api.nvim_create_autocmd("VimEnter", {
   callback = function(data)
-    if vim.fn.isdirectory(data.file) == 1 then
-      vim.cmd("enew")
-      vim.cmd.bw(data.buf)
-      vim.cmd.cd(data.file)
-      require("nvim-tree.api").tree.toggle()
-      -- Move focus back to the file
-      vim.cmd.wincmd("p")
+    if vim.fn.isdirectory(data.file) ~= 1 then
+      return
     end
+    vim.cmd.cd(data.file)
+    vim.cmd("enew")
+    pcall(vim.cmd.bw, data.buf)
+    local api = require("nvim-tree.api")
+    api.tree.open()
+    vim.schedule(function()
+      pcall(api.tree.reload)
+    end)
+    vim.defer_fn(function()
+      pcall(api.tree.reload)
+    end, 100)
   end,
 })
