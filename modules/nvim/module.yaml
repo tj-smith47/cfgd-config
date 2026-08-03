@@ -232,7 +232,11 @@ spec:
       timeout: 600s
     - run: |
         nvim --headless "+MasonToolsInstallSync" +qa
-      timeout: 900s
+      # Sixty-odd packages, each a registry lookup plus a download or a compile.
+      # A cold machine measured just past 900s, so the bound is doubled rather
+      # than trimmed to fit: a half-installed mason leaves servers that only
+      # show up later, when the user opens a matching filetype.
+      timeout: 1800s
     - run: |
         nvim --headless "+GoInstallBinaries" +qa
       timeout: 300s

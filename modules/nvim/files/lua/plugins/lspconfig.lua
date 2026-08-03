@@ -436,9 +436,12 @@ return {
 
       -- mason-tool-installer accepts lspconfig server names as well as mason
       -- package names, so the server table above doubles as an install list.
-      -- Duplicates are already collapsed by mason-tool-installer.
+      -- Duplicates are already collapsed by mason-tool-installer. The servers go
+      -- in as bare names rather than `auto_update` entries: mason-lspconfig never
+      -- update-checked them, and thirty extra registry round-trips on every
+      -- startup is what pushed the provisioning install past its timeout.
       for _, server in ipairs(vim.tbl_keys(servers)) do
-        table.insert(ensure_installed, { server, auto_update = true })
+        table.insert(ensure_installed, server)
       end
 
       mason_tool_installer.setup({
