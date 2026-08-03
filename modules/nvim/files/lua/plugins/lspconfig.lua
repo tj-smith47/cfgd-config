@@ -370,9 +370,13 @@ return {
         yamlls = {},
       }
 
+      -- Installation is delegated to mason-tool-installer below rather than
+      -- listed here: mason-lspconfig installs asynchronously on first startup,
+      -- so a fresh machine spends its first editing session watching install
+      -- toasts. mason-tool-installer's list is what `MasonToolsInstallSync`
+      -- blocks on, which is how the servers land during provisioning instead.
       mason_lspconfig.setup({
         automatic_enable = true,
-        ensure_installed = vim.tbl_keys(servers),
       })
 
       -- [[ Mason Tool Installer ]]
@@ -428,6 +432,13 @@ return {
         for _, tool in ipairs(darwin_install) do
           table.insert(ensure_installed, tool)
         end
+      end
+
+      -- mason-tool-installer accepts lspconfig server names as well as mason
+      -- package names, so the server table above doubles as an install list.
+      -- Duplicates are already collapsed by mason-tool-installer.
+      for _, server in ipairs(vim.tbl_keys(servers)) do
+        table.insert(ensure_installed, { server, auto_update = true })
       end
 
       mason_tool_installer.setup({
