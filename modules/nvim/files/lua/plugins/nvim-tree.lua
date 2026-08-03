@@ -26,6 +26,12 @@ return {
     },
     opts = {
       disable_netrw = true,
+      -- The hijack still retargets an already-open tree at a directory opened
+      -- mid-session, but it must not open the tree itself: during startup it
+      -- runs from a BufEnter raised while plugins are still loading, before the
+      -- argument buffer is loaded, and the tree it draws there comes up empty.
+      -- config/autocmds.lua opens the tree on VimEnter instead.
+      hijack_directories = { auto_open = false },
       -- filters = {
       --   git_ignored = false,
       -- },

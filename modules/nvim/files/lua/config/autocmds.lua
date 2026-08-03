@@ -36,24 +36,18 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- [[ Open nvim-tree when launched on a directory ]]
--- The tree window opens before nvim-tree's initial scan has rendered, so it
--- comes up empty; reloading once startup settles forces it to populate
--- (the programmatic equivalent of a manual :NvimTreeRefresh).
+-- This is the only directory opener; nvim-tree's own hijack is left enabled but
+-- non-opening (see plugins/nvim-tree.lua). Waiting for VimEnter guarantees the
+-- directory buffer is loaded before the tree takes it over — the hijack can
+-- fire from a BufEnter raised mid-plugin-load, and a tree drawn into the still
+-- unloaded directory buffer is discarded once Neovim loads it.
 vim.api.nvim_create_autocmd("VimEnter", {
+  group = augroup("open_tree_on_directory"),
   callback = function(data)
     if vim.fn.isdirectory(data.file) ~= 1 then
       return
     end
     vim.cmd.cd(data.file)
-    vim.cmd("enew")
-    pcall(vim.cmd.bw, data.buf)
-    local api = require("nvim-tree.api")
-    api.tree.open()
-    vim.schedule(function()
-      pcall(api.tree.reload)
-    end)
-    vim.defer_fn(function()
-      pcall(api.tree.reload)
-    end, 100)
+    require("nvim-tree.api").tree.open()
   end,
 })
