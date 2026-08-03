@@ -393,13 +393,16 @@ return {
         { "isort", auto_update = true },
         { "json-to-struct", auto_update = true },
         { "lua-language-server", auto_update = true },
-        { "luacheck", auto_update = true },
         { "misspell", auto_update = true },
         { "mypy", auto_update = true },
         { "prettier", auto_update = true },
         { "pylint", auto_update = true },
         { "revive", auto_update = true },
         { "ruff", auto_update = true },
+        -- Lua linting via selene, not luacheck: mason resolves luacheck to a
+        -- luarocks package, so it needs a system luarocks + a Lua interpreter
+        -- old enough to accept its sources. selene ships a static binary.
+        { "selene", auto_update = true },
         { "shellcheck", auto_update = true },
         { "shfmt", auto_update = true },
         { "staticcheck", auto_update = true },
