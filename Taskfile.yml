@@ -1,0 +1,67 @@
+version: "3"
+
+vars:
+  # Absolute, so a target still resolves the repo's own config when task is
+  # invoked from a subdirectory (`task -d`) rather than the repo root.
+  CONFIG: '{{.ROOT_DIR}}/cfgd.yaml'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  validate:
+    desc: Parse every manifest through cfgd itself — cfgd.yaml, each profile, each module.
+    cmds:
+      - cfgd --config "{{.CONFIG}}" config show -o yaml > /dev/null
+      # `profile list` reads only the filenames — a malformed profile body still
+      # appears in the listing — so each one has to be resolved individually to
+      # put its YAML through the parser.
+      - |
+        cfgd --config "{{.CONFIG}}" profile list -o name | while IFS= read -r p; do
+          [ -n "$p" ] || continue
+          cfgd --config "{{.CONFIG}}" profile show "$p" -o yaml > /dev/null || exit 1
+        done
+      # One invocation covers every module: the listing loads and parses each
+      # module.yaml, and `deny_unknown_fields` turns any stray key into a
+      # nonzero exit naming the file and line.
+      - cfgd --config "{{.CONFIG}}" module list -o name > /dev/null
+
+  lint:
+    desc: Pre-commit check (alias for validate, named to match the cfgd repo).
+    cmds:
+      - task: validate
+
+  plan:
+    desc: "Preview what applying this config would change. Usage: task plan [-- <cfgd plan args>]."
+    cmds:
+      - cfgd --config "{{.CONFIG}}" plan {{.CLI_ARGS}}
+
+  commit:
+    desc: "Validate, then commit. Usage: stage with `git add` first, then `task commit -- -m 'msg'`."
+    preconditions:
+      - sh: test -n "$(git diff --cached --name-only)"
+        msg: "Nothing staged. Stage files with `git add <path>` before running task commit."
+    cmds:
+      - task: validate
+      - git commit {{.CLI_ARGS}}
+
+  commit:quick:
+    desc: "Commit already-staged files WITHOUT the validation gate. Use only when validation is blocked by something unrelated to the staged change AND `task validate` was run manually. Usage: `git add <paths>` first, then `task commit:quick -- -m 'msg'`."
+    preconditions:
+      - sh: test -n "$(git diff --cached --name-only)"
+        msg: "Nothing staged. Stage files with `git add <path>` before running task commit:quick."
+    cmds:
+      - git commit {{.CLI_ARGS}}
+
+  push:
+    desc: "Validated push. Usage: task push [-- <git push args>] (defaults to origin master)."
+    preconditions:
+      # Uncommitted changes must not ride along on a push decision — gate the
+      # validation run and the push on a clean tree.
+      - sh: git diff --quiet && git diff --cached --quiet
+        msg: "Working tree is dirty — commit your changes before task push."
+    cmds:
+      - task: validate
+      - git push {{.CLI_ARGS | default "origin master"}}

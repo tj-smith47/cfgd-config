@@ -5,6 +5,7 @@
 !cfgd.yaml
 !.gitignore
 !README.md
+!Taskfile.yml
 
 # Profiles and modules
 !profiles/
