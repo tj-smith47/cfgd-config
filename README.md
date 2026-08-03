@@ -25,7 +25,7 @@ task validate                    # parse cfgd.yaml, every profile, every module
 task plan                        # preview what applying this config would change
 git add modules/nvim
 task commit -- -m 'fix(nvim): …' # validate, then commit
-task push                        # validate, then push (clean tree required)
+task push                        # validate, then push upstream (clean tree required)
 ```
 
 `task commit:quick` skips the gate for the rare case where validation is

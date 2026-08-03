@@ -56,7 +56,7 @@ tasks:
       - git commit {{.CLI_ARGS}}
 
   push:
-    desc: "Validated push. Usage: task push [-- <git push args>] (defaults to origin master)."
+    desc: "Validated push. Usage: task push [-- <git push args>] (defaults to the branch's upstream)."
     preconditions:
       # Uncommitted changes must not ride along on a push decision — gate the
       # validation run and the push on a clean tree.
@@ -64,4 +64,6 @@ tasks:
         msg: "Working tree is dirty — commit your changes before task push."
     cmds:
       - task: validate
-      - git push {{.CLI_ARGS | default "origin master"}}
+      # No hardcoded remote/branch: this repo's remote is `github`, not
+      # `origin`, so the tracked upstream is the only correct default.
+      - git push {{.CLI_ARGS}}
