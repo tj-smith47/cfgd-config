@@ -224,21 +224,25 @@ spec:
         fi
       timeout: 120s
       continueOnError: true
+    # `+qa!` throughout: a provisioning step that leaves a modified scratch buffer
+    # must still exit, or the step burns its whole timeout on a finished install.
     - run: |
-        nvim --headless "+Lazy! restore" +qa
+        nvim --headless "+Lazy! restore" +qa!
       timeout: 900s
     - run: |
-        nvim --headless "+TSUpdateSync" +qa
+        nvim --headless "+TSUpdateSync" +qa!
       timeout: 600s
     - run: |
-        nvim --headless "+MasonToolsInstallSync" +qa
+        nvim --headless "+MasonToolsInstallSync" +qa!
       # Sixty-odd packages, each a registry lookup plus a download or a compile.
-      # A cold machine measured just past 900s, so the bound is doubled rather
-      # than trimmed to fit: a half-installed mason leaves servers that only
-      # show up later, when the user opens a matching filetype.
-      timeout: 1800s
+      # A cold container measured ~370s for the set, so this is headroom for a
+      # slow mirror. It is deliberately not larger: when the step ran past 1800s
+      # the installs had all finished at 370s and nothing moved after — a stuck
+      # completion wait, not slowness, and one that raising the ceiling only
+      # made more expensive to discover.
+      timeout: 900s
     - run: |
-        nvim --headless "+GoInstallBinaries" +qa
+        nvim --headless "+GoInstallBinaries" +qa!
       timeout: 300s
       continueOnError: true
     # markdown-preview.nvim's `build` function is gated on `#ui > 0`, so headless

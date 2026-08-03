@@ -436,12 +436,48 @@ return {
 
       -- mason-tool-installer accepts lspconfig server names as well as mason
       -- package names, so the server table above doubles as an install list.
-      -- Duplicates are already collapsed by mason-tool-installer. The servers go
-      -- in as bare names rather than `auto_update` entries: mason-lspconfig never
-      -- update-checked them, and thirty extra registry round-trips on every
-      -- startup is what pushed the provisioning install past its timeout.
+      -- It does NOT collapse the two spellings of one package, and a name queued
+      -- twice never satisfies `MasonToolsInstallSync`: every package installs,
+      -- the command keeps waiting, and provisioning sits at a finished screen
+      -- until its timeout kills nvim. `yamlls` below and `yamlls` in the server
+      -- table are one such pair. So canonicalize every entry to its mason
+      -- package name and add each one at most once. Bare names, not
+      -- `auto_update` entries — mason-lspconfig never update-checked these
+      -- servers, and thirty registry round-trips per startup buy nothing.
+      local to_mason = {}
+      for _, source in ipairs({
+        function()
+          return mason_lspconfig.get_mappings().lspconfig_to_mason
+        end,
+        function()
+          return require("mason-lspconfig.mappings.server").lspconfig_to_package
+        end,
+      }) do
+        local ok, mappings = pcall(source)
+        if ok and type(mappings) == "table" then
+          to_mason = mappings
+          break
+        end
+      end
+
+      local queued = {}
+      for i, entry in ipairs(ensure_installed) do
+        local name = type(entry) == "table" and entry[1] or entry
+        local pkg = to_mason[name] or name
+        if type(entry) == "table" then
+          entry[1] = pkg
+        else
+          ensure_installed[i] = pkg
+        end
+        queued[pkg] = true
+      end
+
       for _, server in ipairs(vim.tbl_keys(servers)) do
-        table.insert(ensure_installed, server)
+        local pkg = to_mason[server] or server
+        if not queued[pkg] then
+          queued[pkg] = true
+          table.insert(ensure_installed, pkg)
+        end
       end
 
       mason_tool_installer.setup({
