@@ -1,10 +1,15 @@
 return {
   { -- Highlight, edit, and navigate code
     "nvim-treesitter/nvim-treesitter",
+    -- Pinned to the pre-rewrite branch: `main` dropped the `nvim-treesitter.configs`
+    -- and `nvim-treesitter.query` Lua modules this file's `config` and both
+    -- companion plugins below still require, and nvim-treesitter-refactor has no
+    -- `main`-compatible successor at all (its repo carries no `main` branch).
+    branch = "master",
     build = ":TSUpdate",
     dependencies = { -- Additional text objects via treesitter
-      "nvim-treesitter/nvim-treesitter-textobjects",
-      "nvim-treesitter/nvim-treesitter-refactor",
+      { "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
+      { "nvim-treesitter/nvim-treesitter-refactor", branch = "master" },
       {
         "rcarriga/nvim-dap-ui",
         dependencies = {

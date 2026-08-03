@@ -135,10 +135,8 @@ spec:
   # --- Ruby toolchain -----------------------------------------------------
   # Mason has no prebuilt binaries for solargraph or rubocop and shells out to
   # `gem` for both (lspconfig.lua servers, conform.lua ruby formatter). Without
-  # a Ruby on PATH the two installs fail on every startup. Both pull gems with
-  # C extensions, so the interpreter needs its development headers too — the
-  # apt/dnf package names below are the ones that carry them. No minVersion
-  # even though solargraph wants 3.1: cfgd treats an unmet minimum as an
+  # a Ruby on PATH the two installs fail on every startup. No minVersion even
+  # though solargraph wants 3.1: cfgd treats an unmet minimum as an
   # unresolvable package and fails the whole module, which is a worse outcome
   # on a distro stuck below it than rubocop installing and solargraph not.
   - name: ruby
@@ -148,6 +146,22 @@ spec:
     aliases:
       apt: ruby-full
       dnf: ruby-devel
+
+  # solargraph pulls the `psych` gem, which has a C extension linking against
+  # libyaml. `ruby-full`/`ruby-devel` only carry Ruby's own headers, not
+  # libyaml's — apt's runtime `libyaml-0-2` is a transitive dep of ruby-full
+  # already, but its headers ship in a separate `-dev` package apt never pulls
+  # implicitly. Without this, solargraph's gem install fails at `extconf.rb`
+  # with `yaml.h not found` on every startup. Homebrew's ruby formula already
+  # depends on its own libyaml keg, so this is a no-op there; declared anyway
+  # so the requirement doesn't silently depend on brew's dependency graph.
+  - name: libyaml
+    prefer:
+    - apt
+    - brew
+    aliases:
+      apt: libyaml-dev
+      dnf: libyaml-devel
 
   # --- Secrets ------------------------------------------------------------
   - name: sops                    # sops.nvim + nvim-sops
