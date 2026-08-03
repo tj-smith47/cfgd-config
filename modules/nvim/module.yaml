@@ -132,6 +132,23 @@ spec:
     - cargo
     - brew
 
+  # --- Ruby toolchain -----------------------------------------------------
+  # Mason has no prebuilt binaries for solargraph or rubocop and shells out to
+  # `gem` for both (lspconfig.lua servers, conform.lua ruby formatter). Without
+  # a Ruby on PATH the two installs fail on every startup. Both pull gems with
+  # C extensions, so the interpreter needs its development headers too — the
+  # apt/dnf package names below are the ones that carry them. No minVersion
+  # even though solargraph wants 3.1: cfgd treats an unmet minimum as an
+  # unresolvable package and fails the whole module, which is a worse outcome
+  # on a distro stuck below it than rubocop installing and solargraph not.
+  - name: ruby
+    prefer:
+    - apt
+    - brew
+    aliases:
+      apt: ruby-full
+      dnf: ruby-devel
+
   # --- Secrets ------------------------------------------------------------
   - name: sops                    # sops.nvim + nvim-sops
     prefer:
@@ -164,8 +181,13 @@ spec:
     value: nvim
   - name: VISUAL
     value: nvim
+  # Homebrew keeps ruby keg-only on macOS because the OS ships its own, so
+  # without the keg's bin directory `gem` resolves to the system Ruby 2.6 —
+  # too old for the solargraph and rubocop gems Mason installs. The two keg
+  # paths cover Apple Silicon and Intel; neither exists on Linux, where brew
+  # links ruby normally, and a missing PATH entry is inert.
   - name: PATH
-    value: $HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH
+    value: $HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:/opt/homebrew/opt/ruby/bin:/usr/local/opt/ruby/bin:$PATH
 
   aliases:
   - name: v
