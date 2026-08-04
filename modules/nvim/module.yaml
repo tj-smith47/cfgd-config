@@ -229,9 +229,19 @@ spec:
     - run: |
         nvim --headless "+Lazy! restore" +qa!
       timeout: 900s
+    # nvim-treesitter is lazy-loaded on BufReadPre/BufNewFile and declares no
+    # `cmd` stubs, so on a fresh machine a bare `+TSUpdateSync` reached a plugin
+    # that had never loaded, and `TSUpdate` with no argument only refreshes
+    # parsers already on disk — nothing was installed at all. `Lazy! load` runs
+    # the plugin's own config, whose `sync_install = true` installs the entire
+    # `ensure_installed` set before nvim exits. Without it the set installs
+    # during the first interactive launch instead, where the compile log
+    # overflows the message area and blocks the editor on a `-- More --` prompt.
+    # Nineteen parsers, each a clone plus a C compile, is why this allots more
+    # than the update-only pass it replaced.
     - run: |
-        nvim --headless "+TSUpdateSync" +qa!
-      timeout: 600s
+        nvim --headless "+Lazy! load nvim-treesitter" "+TSUpdateSync" +qa!
+      timeout: 900s
     - run: |
         nvim --headless "+MasonToolsInstallSync" +qa!
       # Sixty-odd packages, each a registry lookup plus a download or a compile.
