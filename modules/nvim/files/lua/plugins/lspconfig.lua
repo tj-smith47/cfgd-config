@@ -444,8 +444,16 @@ return {
       -- package name and add each one at most once. Bare names, not
       -- `auto_update` entries — mason-lspconfig never update-checked these
       -- servers, and thirty registry round-trips per startup buy nothing.
+      -- The v2 and v1 spellings of the same table differ in BOTH the field name
+      -- and the module that holds it, and reading the wrong one yields nil
+      -- rather than an error — a silent empty map that turns this whole block
+      -- into a no-op and lets the duplicate through. Each source below is
+      -- checked for a non-empty table, not merely a successful call.
       local to_mason = {}
       for _, source in ipairs({
+        function()
+          return mason_lspconfig.get_mappings().lspconfig_to_package
+        end,
         function()
           return mason_lspconfig.get_mappings().lspconfig_to_mason
         end,
@@ -454,7 +462,7 @@ return {
         end,
       }) do
         local ok, mappings = pcall(source)
-        if ok and type(mappings) == "table" then
+        if ok and type(mappings) == "table" and next(mappings) ~= nil then
           to_mason = mappings
           break
         end
