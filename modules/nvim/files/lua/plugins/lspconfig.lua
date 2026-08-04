@@ -436,36 +436,60 @@ return {
 
       -- mason-tool-installer accepts lspconfig server names as well as mason
       -- package names, so the server table above doubles as an install list.
-      -- It does NOT collapse the two spellings of one package, and a name queued
-      -- twice never satisfies `MasonToolsInstallSync`: every package installs,
-      -- the command keeps waiting, and provisioning sits at a finished screen
-      -- until its timeout kills nvim. `yamlls` below and `yamlls` in the server
-      -- table are one such pair. So canonicalize every entry to its mason
-      -- package name and add each one at most once. Bare names, not
-      -- `auto_update` entries — mason-lspconfig never update-checked these
-      -- servers, and thirty registry round-trips per startup buy nothing.
-      -- The v2 and v1 spellings of the same table differ in BOTH the field name
-      -- and the module that holds it, and reading the wrong one yields nil
-      -- rather than an error — a silent empty map that turns this whole block
-      -- into a no-op and lets the duplicate through. Each source below is
-      -- checked for a non-empty table, not merely a successful call.
-      local to_mason = {}
-      for _, source in ipairs({
-        function()
-          return mason_lspconfig.get_mappings().lspconfig_to_package
-        end,
-        function()
-          return mason_lspconfig.get_mappings().lspconfig_to_mason
-        end,
-        function()
-          return require("mason-lspconfig.mappings.server").lspconfig_to_package
-        end,
-      }) do
-        local ok, mappings = pcall(source)
-        if ok and type(mappings) == "table" and next(mappings) ~= nil then
-          to_mason = mappings
-          break
+      -- It does NOT collapse the two spellings of one package, and a package
+      -- queued twice hangs `MasonToolsInstallSync` outright: it counts list
+      -- entries, not distinct packages, and its second `do_install` for a
+      -- package already installing skips registering the completion callback
+      -- entirely, so one completion never arrives and its `vim.wait` loop never
+      -- exits. Every package installs, and provisioning then sits at a finished
+      -- screen until the step's timeout kills nvim. `bashls`, `lua_ls` and
+      -- `vimls` in the server table are the same packages as
+      -- `bash-language-server`, `lua-language-server` and `vim-language-server`
+      -- below. So canonicalize every entry to its mason package name and add
+      -- each one at most once. Bare names, not `auto_update` entries —
+      -- mason-lspconfig never update-checked these servers, and thirty registry
+      -- round-trips per startup buy nothing.
+      local function mason_package_map()
+        -- The v2 and v1 spellings of the same table differ in BOTH the field
+        -- name and the module that holds it, and reading the wrong one yields
+        -- nil rather than an error. Each source is checked for a non-empty
+        -- table, not merely a successful call.
+        for _, source in ipairs({
+          function()
+            return mason_lspconfig.get_mappings().lspconfig_to_package
+          end,
+          function()
+            return require("mason-lspconfig.mappings").get_mason_map().lspconfig_to_package
+          end,
+          function()
+            return require("mason-lspconfig.mappings.server").lspconfig_to_package
+          end,
+        }) do
+          local ok, mappings = pcall(source)
+          if ok and type(mappings) == "table" and next(mappings) ~= nil then
+            return mappings
+          end
         end
+        return {}
+      end
+
+      -- Every spelling of that map is derived from the mason registry's package
+      -- specs, so it is EMPTY until the registry has been downloaded — which on
+      -- a fresh machine has not happened by the time this config runs. Empty is
+      -- silent: every name canonicalizes to itself, the duplicates go straight
+      -- through, and the hang above is what a first provisioning run gets.
+      -- mason-tool-installer only avoids this because it resolves names inside
+      -- `mason-registry.refresh(...)`, after the download. Do the same here:
+      -- refresh first (blocking, and a no-op that touches no network once the
+      -- registry cache is warm), and if the map is still empty afterwards, add
+      -- nothing from the server table — a server that was not preinstalled
+      -- costs one background install on first use, a duplicate costs the run.
+      local to_mason = mason_package_map()
+      if next(to_mason) == nil then
+        pcall(function()
+          require("mason-registry").refresh()
+        end)
+        to_mason = mason_package_map()
       end
 
       local queued = {}
@@ -480,11 +504,13 @@ return {
         queued[pkg] = true
       end
 
-      for _, server in ipairs(vim.tbl_keys(servers)) do
-        local pkg = to_mason[server] or server
-        if not queued[pkg] then
-          queued[pkg] = true
-          table.insert(ensure_installed, pkg)
+      if next(to_mason) ~= nil then
+        for _, server in ipairs(vim.tbl_keys(servers)) do
+          local pkg = to_mason[server] or server
+          if not queued[pkg] then
+            queued[pkg] = true
+            table.insert(ensure_installed, pkg)
+          end
         end
       end
 
