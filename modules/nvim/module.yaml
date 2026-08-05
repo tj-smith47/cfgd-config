@@ -251,8 +251,11 @@ spec:
       # completion wait, not slowness, and one that raising the ceiling only
       # made more expensive to discover.
       timeout: 900s
+    # go.nvim is lazy-loaded on go filetypes, so headless never registers
+    # :GoInstallBinaries and the step failed with E492 while still exiting 0.
+    # Load the plugin first, the same way the treesitter step above does.
     - run: |
-        nvim --headless "+GoInstallBinaries" +qa!
+        nvim --headless "+Lazy! load go.nvim" "+GoInstallBinaries" +qa!
       timeout: 300s
       continueOnError: true
     # markdown-preview.nvim's `build` function is gated on `#ui > 0`, so headless
