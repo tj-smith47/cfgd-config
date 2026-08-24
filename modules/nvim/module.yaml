@@ -224,6 +224,26 @@ spec:
         fi
       timeout: 120s
       continueOnError: true
+    # Put lazy.nvim itself on the lock's commit before nvim ever starts. The
+    # bootstrap clone in lua/config/lazy.lua checks out the `stable` tag, and
+    # lazy.nvim's own first-start install pass never checks itself out (it only
+    # handles plugins that are not installed yet) but then rewrites the lockfile
+    # from every installed plugin's HEAD, so the deployed lock's lazy.nvim entry
+    # is clobbered with the tag's commit before `Lazy! restore` reads it. The
+    # checker compares lazy.nvim's HEAD against origin/main, so a HEAD parked on
+    # `stable` raises a Plugin Updates toast on every launch while main is ahead.
+    # Cloning here (same URL and filter as the bootstrap) and checking out the
+    # locked commit makes the lock govern lazy.nvim exactly as it governs every
+    # other plugin. Idempotent: an existing clone is only fetched when it lacks
+    # the commit.
+    - run: |
+        lazy="$HOME/.local/share/nvim/lazy/lazy.nvim"
+        want=$(sed -n 's/.*"lazy.nvim": {[^}]*"commit": "\([0-9a-f]*\)".*/\1/p' "$HOME/.config/nvim/lazy-lock.json")
+        [ -n "$want" ] || exit 0
+        [ -d "$lazy/.git" ] || git clone --filter=blob:none https://github.com/folke/lazy.nvim.git "$lazy"
+        git -C "$lazy" rev-parse --verify -q "$want^{commit}" >/dev/null || git -C "$lazy" fetch -q origin
+        git -C "$lazy" checkout -q "$want"
+      timeout: 120s
     # `+qa!` throughout: a provisioning step that leaves a modified scratch buffer
     # must still exit, or the step burns its whole timeout on a finished install.
     - run: |
