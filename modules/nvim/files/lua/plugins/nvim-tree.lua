@@ -61,7 +61,7 @@ return {
         },
       },
       view = {
-        width = 40,
+        width = 30,
       },
 
       -- For project.nvim (Telescope)
