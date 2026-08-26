@@ -122,7 +122,11 @@ return {
         },
       },
       refactor = {
-        highlight_definitions = { enable = true },
+        -- Off: nvim 0.12 hands `iter_matches` a node LIST per capture, and the
+        -- frozen `master` locals.lua still treats it as one node, so the
+        -- CursorHold highlighter throws `attempt to call method 'parent'` on
+        -- every hold instead of highlighting anything.
+        highlight_definitions = { enable = false },
         highlight_current_scope = { enable = false },
       },
       sync_install = true,
