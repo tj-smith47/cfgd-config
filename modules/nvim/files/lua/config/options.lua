@@ -49,7 +49,7 @@ opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or 
 -- vim.opt.cmdheight = 0 -- height of the command bar
 
 -- context
-opt.number = true -- absolute number on the cursor line
+opt.number = true -- show the number column
 opt.path = "**/**" -- search in subdirectories
 opt.scrolloff = 8 -- lines of context
 
