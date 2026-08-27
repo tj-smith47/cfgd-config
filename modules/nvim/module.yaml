@@ -124,10 +124,10 @@ spec:
   # stylua is a Rust binary; cargo provides a reliable fallback when brew isn't
   # available on the host.
   - name: cargo
-    # Distro cargo is old enough to be useless as a stylua fallback: noble ships
-    # 1.75, and stylua needs edition2024. The floor is what keeps the fallback
-    # honest rather than a build that fails after fetching the whole toolchain.
-    minVersion: '1.85'
+    # No minVersion, though noble's 1.75 is too old to build stylua: cfgd treats
+    # an unmet floor as an unresolvable package and fails the whole module, so a
+    # floor here costs nvim on any host whose distro cargo lags. The prefer
+    # order below is what keeps stylua off that cargo.
     aliases:
       brew: rust
   - name: stylua                  # Lua formatter used by conform.nvim
