@@ -126,7 +126,6 @@ spec:
   - name: cargo
     aliases:
       brew: rust
-      apt: rustc
   - name: stylua                  # Lua formatter used by conform.nvim
     prefer:
     - cargo
