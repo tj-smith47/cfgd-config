@@ -198,13 +198,18 @@ spec:
     value: nvim
   - name: VISUAL
     value: nvim
+  - name: PATH
+    value: $HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH
   # Homebrew keeps ruby keg-only on macOS because the OS ships its own, so
   # without the keg's bin directory `gem` resolves to the system Ruby 2.6 —
   # too old for the solargraph and rubocop gems Mason installs. The two keg
-  # paths cover Apple Silicon and Intel; neither exists on Linux, where brew
-  # links ruby normally, and a missing PATH entry is inert.
+  # paths cover Apple Silicon and Intel and exist on no other platform, so the
+  # entry says which host it is for rather than relying on a missing directory
+  # being inert. Both declarations end in the inherited reference, so each
+  # keeps its own directories ahead of it and the two fold into one line.
   - name: PATH
-    value: $HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:/opt/homebrew/opt/ruby/bin:/usr/local/opt/ruby/bin:$PATH
+    platforms: [macos]
+    value: /opt/homebrew/opt/ruby/bin:/usr/local/opt/ruby/bin:$PATH
 
   aliases:
   - name: v
