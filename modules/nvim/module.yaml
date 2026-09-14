@@ -6,18 +6,15 @@ metadata:
 
 spec:
   packages:
-  # --- Editor ---------------------------------------------------------------
   - name: neovim
     minVersion: '0.11'
     prefer:
     - brew
     - snap
     deny:
-    - apt                         # Ubuntu LTS apt nvim is too old for our plugin set
+    - apt                         # Ubuntu LTS ships a neovim too old for this plugin set
 
-  # --- Native build toolchain ---------------------------------------------
-  # LuaSnip (jsregexp), telescope-fzf-native, CopilotChat (tiktoken),
-  # nvim-treesitter parser compilation all shell out to `make` + a C compiler.
+  # Native plugins (LuaSnip, telescope-fzf-native, tiktoken, treesitter parsers) build with make + a C compiler.
   - name: gcc
     aliases:
       apt: build-essential
@@ -27,16 +24,13 @@ spec:
   - name: make
     platforms:
     - linux
-  - name: unzip                   # Mason unpacks language-server archives with unzip
-  - name: git                     # lazy.nvim cloning, fugitive, gitsigns, diffview
+  - name: unzip
+  - name: git
   - name: curl
 
-  # --- CLI helpers used directly by plugins -------------------------------
-  - name: ripgrep                 # telescope live_grep, todo-comments
-  - name: fd                      # telescope find_files
-    # apt ships fd as `fdfind` (no symlink); brew + cargo install the binary
-    # as `fd` directly. Prefer those so telescope can find it without a manual
-    # alias on the user's PATH.
+  - name: ripgrep
+  - name: fd
+    # apt installs the binary as `fdfind`; brew and cargo install it as `fd`, which telescope expects.
     prefer:
     - brew
     - cargo
@@ -44,29 +38,23 @@ spec:
     aliases:
       apt: fd-find
       cargo: fd-find
-  - name: zoxide                  # telescope-zoxide
+  - name: zoxide
     prefer:
     - brew
     - cargo
     - apt
 
-  # --- Linux desktop providers --------------------------------------------
-  # X11 / Wayland clipboard providers. Harmless on headless boxes; nvim's
-  # OSC52 fallback (configured in lua/config/options.lua under $SSH_TTY)
-  # covers SSH-only setups like Termius.
+  # Clipboard providers; harmless headless, OSC52 covers SSH-only sessions.
   - name: xclip
     platforms:
     - linux
   - name: wl-clipboard
     platforms:
     - linux
-  - name: xdg-utils               # url-open's `gx` → xdg-open
+  - name: xdg-utils
     platforms:
     - linux
 
-  # --- Node toolchain -----------------------------------------------------
-  # copilot.vim needs node ≥18. markdown-preview prefers yarn but falls back
-  # to npm. Mason pulls dozens of JS-based language servers via npm.
   - name: node
     minVersion: '18'
     prefer:
@@ -74,31 +62,24 @@ spec:
     - apt
     aliases:
       apt: nodejs
-  - name: npm                     # apt's nodejs package doesn't always include npm
+  - name: npm                     # apt's nodejs does not always include npm
     platforms:
     - linux
   - name: yarn
     prefer:
     - npm
     - brew
-  # Node provider for nvim — needed by remote/JS plugins. Without it,
-  # :checkhealth reports "Missing 'neovim' npm package". Same canonical
-  # `neovim` name as the editor entry above; cfgd's resolver treats per-manager
-  # entries independently.
-  - name: neovim
+  - name: neovim                  # the npm provider package, distinct from the editor entry above
     prefer:
     - npm
 
-  # --- Python toolchain ---------------------------------------------------
-  # Mason installs many python-based linters/formatters via pip. dap-python
-  # needs a real venv. pynvim is the python provider (vim.python3_host_prog).
   - name: python3
   - name: pip
     aliases:
       apt: python3-pip
     platforms:
     - linux
-  - name: python3-venv            # pipx + debugpy + dap-python require venv
+  - name: python3-venv            # pipx and dap-python need a real venv
     aliases:
       dnf: python3-virtualenv
     platforms:
@@ -107,41 +88,26 @@ spec:
     prefer:
     - brew
     - apt
-  - name: pynvim                  # vim.python3 provider for nvim
+  - name: pynvim
     prefer:
     - pipx
 
-  # --- Go toolchain -------------------------------------------------------
-  # go.nvim's :GoInstallBinaries calls `go install` for dlv, gotests, iferr,
-  # fillstruct, gomodifytags. Mason also installs gopls/gofumpt/golines via go.
   - name: go
     minVersion: '1.25'
     prefer:
     - brew
     - apt
 
-  # --- Rust toolchain -----------------------------------------------------
-  # stylua is a Rust binary; cargo provides a reliable fallback when brew isn't
-  # available on the host.
+  # No minVersion: noble's cargo is too old to build stylua, and an unmet floor fails the whole module.
   - name: cargo
-    # No minVersion, though noble's 1.75 is too old to build stylua: cfgd treats
-    # an unmet floor as an unresolvable package and fails the whole module, so a
-    # floor here costs nvim on any host whose distro cargo lags. The prefer
-    # order below is what keeps stylua off that cargo.
     aliases:
       brew: rust
-  - name: stylua                  # Lua formatter used by conform.nvim
+  - name: stylua
     prefer:
     - brew
     - cargo
 
-  # --- Ruby toolchain -----------------------------------------------------
-  # Mason has no prebuilt binaries for solargraph or rubocop and shells out to
-  # `gem` for both (lspconfig.lua servers, conform.lua ruby formatter). Without
-  # a Ruby on PATH the two installs fail on every startup. No minVersion even
-  # though solargraph wants 3.1: cfgd treats an unmet minimum as an
-  # unresolvable package and fails the whole module, which is a worse outcome
-  # on a distro stuck below it than rubocop installing and solargraph not.
+  # No minVersion for the same reason; solargraph wants 3.1 but rubocop still installs below it.
   - name: ruby
     prefer:
     - apt
@@ -149,15 +115,7 @@ spec:
     aliases:
       apt: ruby-full
       dnf: ruby-devel
-
-  # solargraph pulls the `psych` gem, which has a C extension linking against
-  # libyaml. `ruby-full`/`ruby-devel` only carry Ruby's own headers, not
-  # libyaml's — apt's runtime `libyaml-0-2` is a transitive dep of ruby-full
-  # already, but its headers ship in a separate `-dev` package apt never pulls
-  # implicitly. Without this, solargraph's gem install fails at `extconf.rb`
-  # with `yaml.h not found` on every startup. Homebrew's ruby formula already
-  # depends on its own libyaml keg, so this is a no-op there; declared anyway
-  # so the requirement doesn't silently depend on brew's dependency graph.
+  # solargraph's psych gem compiles against libyaml headers, which ruby-full does not pull in.
   - name: libyaml
     prefer:
     - apt
@@ -166,12 +124,11 @@ spec:
       apt: libyaml-dev
       dnf: libyaml-devel
 
-  # --- Secrets ------------------------------------------------------------
-  - name: sops                    # sops.nvim + nvim-sops
+  - name: sops
     prefer:
     - brew
     - apt
-  - name: age                     # sops age backend
+  - name: age
     prefer:
     - brew
     - apt
@@ -187,10 +144,7 @@ spec:
     target: ~/.config/nvim/lua
   - source: files/after
     target: ~/.config/nvim/after
-  # Earlier on the runtimepath than any plugin, which is what it takes to
-  # replace a query: Neovim keeps the first non-`;; extends` file it finds and
-  # discards the rest.
-  - source: files/queries
+  - source: files/queries          # ahead of every plugin on the runtimepath, so these queries win
     target: ~/.config/nvim/queries
 
   env:
@@ -200,13 +154,7 @@ spec:
     value: nvim
   - name: PATH
     value: $HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:$PATH
-  # Homebrew keeps ruby keg-only on macOS because the OS ships its own, so
-  # without the keg's bin directory `gem` resolves to the system Ruby 2.6 —
-  # too old for the solargraph and rubocop gems Mason installs. The two keg
-  # paths cover Apple Silicon and Intel and exist on no other platform, so the
-  # entry says which host it is for rather than relying on a missing directory
-  # being inert. Both declarations end in the inherited reference, so each
-  # keeps its own directories ahead of it and the two fold into one line.
+  # Homebrew's ruby is keg-only on macOS; without it `gem` is the system Ruby 2.6.
   - name: PATH
     platforms: [macos]
     value: /opt/homebrew/opt/ruby/bin:/usr/local/opt/ruby/bin:$PATH
@@ -220,11 +168,6 @@ spec:
     command: nvim
 
   scripts:
-    # First-run bootstrap. Each step is idempotent; cfgd will skip on second apply
-    # only via timestamp tracking, but the underlying commands handle re-runs.
-    # spec.env above (PATH, EDITOR, VISUAL) is injected into each step's process
-    # environment, so the nvim binary and ~/.local/bin, go/bin, cargo/bin
-    # toolchains are already on PATH — no per-step export needed.
     postApply:
     - run: |
         if command -v pipx >/dev/null 2>&1; then
@@ -232,18 +175,7 @@ spec:
         fi
       timeout: 120s
       continueOnError: true
-    # Put lazy.nvim itself on the lock's commit before nvim ever starts. The
-    # bootstrap clone in lua/config/lazy.lua checks out the `stable` tag, and
-    # lazy.nvim's own first-start install pass never checks itself out (it only
-    # handles plugins that are not installed yet) but then rewrites the lockfile
-    # from every installed plugin's HEAD, so the deployed lock's lazy.nvim entry
-    # is clobbered with the tag's commit before `Lazy! restore` reads it. The
-    # checker compares lazy.nvim's HEAD against origin/main, so a HEAD parked on
-    # `stable` raises a Plugin Updates toast on every launch while main is ahead.
-    # Cloning here (same URL and filter as the bootstrap) and checking out the
-    # locked commit makes the lock govern lazy.nvim exactly as it governs every
-    # other plugin. Idempotent: an existing clone is only fetched when it lacks
-    # the commit.
+    # Park lazy.nvim itself on the locked commit, or its first start rewrites the lock from the `stable` tag.
     - run: |
         lazy="$HOME/.local/share/nvim/lazy/lazy.nvim"
         want=$(sed -n 's/.*"lazy.nvim": {[^}]*"commit": "\([0-9a-f]*\)".*/\1/p' "$HOME/.config/nvim/lazy-lock.json")
@@ -252,42 +184,23 @@ spec:
         git -C "$lazy" rev-parse --verify -q "$want^{commit}" >/dev/null || git -C "$lazy" fetch -q origin
         git -C "$lazy" checkout -q "$want"
       timeout: 120s
-    # `+qa!` throughout: a provisioning step that leaves a modified scratch buffer
-    # must still exit, or the step burns its whole timeout on a finished install.
+    # `+qa!` everywhere: a modified scratch buffer would otherwise hold nvim open for the whole timeout.
     - run: |
         nvim --headless "+Lazy! restore" +qa!
       timeout: 900s
-    # nvim-treesitter is lazy-loaded on BufReadPre/BufNewFile and declares no
-    # `cmd` stubs, so on a fresh machine a bare `+TSUpdateSync` reached a plugin
-    # that had never loaded, and `TSUpdate` with no argument only refreshes
-    # parsers already on disk — nothing was installed at all. `Lazy! load` runs
-    # the plugin's own config, whose `sync_install = true` installs the entire
-    # `ensure_installed` set before nvim exits. Without it the set installs
-    # during the first interactive launch instead, where the compile log
-    # overflows the message area and blocks the editor on a `-- More --` prompt.
-    # Nineteen parsers, each a clone plus a C compile, is why this allots more
-    # than the update-only pass it replaced.
+    # nvim-treesitter is lazy-loaded; `Lazy! load` runs its sync_install so the parsers compile here, not on first launch.
     - run: |
         nvim --headless "+Lazy! load nvim-treesitter" "+TSUpdateSync" +qa!
       timeout: 900s
     - run: |
         nvim --headless "+MasonToolsInstallSync" +qa!
-      # Sixty-odd packages, each a registry lookup plus a download or a compile.
-      # A cold container measured ~370s for the set, so this is headroom for a
-      # slow mirror. It is deliberately not larger: when the step ran past 1800s
-      # the installs had all finished at 370s and nothing moved after — a stuck
-      # completion wait, not slowness, and one that raising the ceiling only
-      # made more expensive to discover.
-      timeout: 900s
-    # go.nvim is lazy-loaded on go filetypes, so headless never registers
-    # :GoInstallBinaries and the step failed with E492 while still exiting 0.
-    # Load the plugin first, the same way the treesitter step above does.
+      timeout: 900s               # ~370s cold; past that the step is stuck, not slow
+    # go.nvim is lazy-loaded on go filetypes, so headless must load it before :GoInstallBinaries exists.
     - run: |
         nvim --headless "+Lazy! load go.nvim" "+GoInstallBinaries" +qa!
       timeout: 300s
       continueOnError: true
-    # markdown-preview.nvim's `build` function is gated on `#ui > 0`, so headless
-    # installs skip the node-app install. Do it directly from the lazy plugin dir.
+    # markdown-preview's build hook is gated on a UI, so headless installs skip it.
     - run: |
         mp="$HOME/.local/share/nvim/lazy/markdown-preview.nvim/app"
         if [ -d "$mp" ]; then
